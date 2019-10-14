@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<style type="text/css">
+			body { font-family:sans-serif;}
+		</style>
+		<script type="text/javascript">
+			function findvehicles(paste) {
+
+				var paste = document.getElementById("paste").value;
+
+				if (paste.length > 0) {
+
+					var parser, xmlDoc
+					parser = new DOMParser();
+					xmlDoc = parser.parseFromString(paste, "application/xml");
+					
+					let temp = xmlDoc.getElementsByTagName("MyObjectBuilder_EntityBase");
+					
+					if (typeof(temp) != undefined) {
+
+						vehicle_list = Array.from(temp);
+						// an array of all grids, including the player(s)!!
+
+						//debug:
+						console.log("found " + vehicle_list.length + " grids");
+
+						for (var i = 0; i < vehicle_list.length; i++) {
+							
+							//debug:
+							console.log("---");
+							console.log("grid " + i + " is of type " + vehicle_list[i].getAttribute("xsi:type"));
+							
+							if (vehicle_list[i].getAttribute("xsi:type") == "MyObjectBuilder_CubeGrid" && findCockpits(vehicle_list[i]) == true) {
+								// test only cube grids, exclude player(s)
+
+								//debug:
+								console.log("This grid may have a handbrake to set!");
+
+								setHandbrake(vehicle_list[i]);
+
+							} else {
+								//debug:
+								console.log("not a vehicle type, ignoring this grid");
+							}
+						}
+						
+						serializer = new XMLSerializer();
+						document.getElementById("output").value = serializer.serializeToString(xmlDoc);
+
+					} else {
+						//debug:
+						console.log("could not find any grids");
+					}
+				} else {
+					//debug:
+					console.log("paste field was empty");
+				}
+			}
+
+			function findCockpits(item) {
+
+				const controlblocktypes = ["MyObjectBuilder_Cockpit", "MyObjectBuilder_ShipController", "MyObjectBuilder_RemoteControl"];
+
+				let vehicle_blocklist_contains_cockpit = false;
+				let temp = item.getElementsByTagName("CubeBlocks")[0].getElementsByTagName("MyObjectBuilder_CubeBlock");
+
+				if (typeof(temp) != undefined) {
+
+					let vehicle_blocklist = Array.from(temp);
+						// an array of all blocks in the current grid
+
+					if (vehicle_blocklist.length > 0) {
+
+						for (var i = 0; i < vehicle_blocklist.length; i++) {
+
+							if (controlblocktypes.includes(vehicle_blocklist[i].getAttribute("xsi:type"))) {
+								// Check type of blocklist entry. If following is found, set and return true.
+								// MyObjectBuilder_Cockpit
+								// MyObjectBuilder_ShipController
+								// MyObjectBuilder_RemoteControl
+
+								//debug:
+								console.log("this is a control-type block!");
+
+								vehicle_blocklist_contains_cockpit = true;
+
+							} else {
+								//debug:
+								console.log("this is not a control-type block");
+							}
+						}
+					} else {
+						//debug:
+						console.log("vehicle_blocklist empty!");
+					}
+				} else {
+					//debug:
+					console.log("strangely, this vehicle has no blocklist");
+				}
+
+				//debug:
+				console.log("vehicle_blocklist_contains_cockpit is " + vehicle_blocklist_contains_cockpit);
+
+				return vehicle_blocklist_contains_cockpit;
+			}
+
+			function setHandbrake(item) {
+				// if <handbrake> is present, nuke.
+				// add <Handbrake>true</Handbrake>
+
+				let existing_handbrake_tag = item.getElementsByTagName("Handbrake")[0];
+
+				if (typeof(existing_handbrake_tag) != 'undefined' && existing_handbrake_tag != null) {
+					// exists, and may or may not have the content we want.
+					// So, we nuke it. It's the only way to be sure.
+
+					//debug:
+					console.log("found a handbrake tag, will kill it.");
+
+					existing_handbrake_tag.parentNode.removeChild(existing_handbrake_tag);
+
+				} else {
+					console.log("could not find a handbrake tag");
+				}
+
+				let new_handbrake_tag = document.createElementNS(null,"Handbrake");
+				let handbrake_true = document.createTextNode("true");
+				new_handbrake_tag.appendChild(handbrake_true);
+				item.appendChild(new_handbrake_tag);
+			}
+
+			//todo: provide a clickable download link if people so desire
+			//https://ourcodeworld.com/articles/read/189/how-to-create-a-file-and-generate-a-download-with-javascript-in-the-browser-without-a-server
+
+		</script>
+		<link rel="icon" type="image/x-icon" href="favicon.ico">
+	</head>
+	<body>
+		<h1>Handbrake setter</h1>
+		<p>This tool sets the handbrakes for all cockpits, remote control blocks, and control or flight seats. It does not toggle anything else that would normally be affected by pressing P.</p>
+		<p>Paste your <em>sandbox_0_0_0_.sbs</em> (not your <strong><em>sandbox.sbc</em></strong> file!!) contents here:</p>
+		<p><textarea id="paste" rows="10" cols="80"></textarea></p>
+		<p><button type="button" onclick="findvehicles()">Set all handbrakes</button></p>
+		<p>Your modified <em>sandbox_0_0_0_.sbs</em> file:</p>
+		<p><textarea id="output" rows="10" cols="80"></textarea></p>
+		<p>Remember to delete the caching file <em>sandbox_0_0_0_.sbsB5</em> before launching or it will take precedence over the SBS file!</p>
+		<p>Deleting the SBSB5 file will cause SE to complain that "the file format is outdated". This is expected and shouldn't be a problem.</p>
+		<p><a href="https://puddingofdoom.github.io/">More tools</a></p>
+	</body>
+</html>

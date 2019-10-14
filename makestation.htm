@@ -1,0 +1,250 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<style type="text/css">
+			body { font-family:sans-serif;}
+		</style>
+		<script type="text/javascript">
+			function findlargegrids(paste) {
+
+				var paste = document.getElementById("paste").value;
+
+				if (paste.length > 0) {
+
+					var parser, xmlDoc
+					parser = new DOMParser();
+					xmlDoc = parser.parseFromString(paste, "application/xml");
+
+					let temp_top_blocks = xmlDoc.getElementsByTagName("TopBlockId");
+					
+					if (typeof(temp_top_blocks) != undefined) {
+						let top_blocks_array = Array.from(temp_top_blocks);
+						var top_blocks = [];
+
+						for (i = 0; i < top_blocks_array.length; i++) {
+							top_blocks.push(top_blocks_array[i].firstChild.textContent);
+
+							//debug:
+							console.log("filling top_blocks, found EntityId " + top_blocks_array[i].firstChild.textContent);
+						}
+
+						// a list of ids of all subgrid blocks that are attached to a parent part, like wheels to a suspension and rotor tops to rotor bodies.
+						// lack of distinction doesn't matter. Later, we're only checking the topblockid of suspensions, not of rotors, so we'll only ever look for wheels anyhow.
+					}
+					
+					let temp = xmlDoc.getElementsByTagName("MyObjectBuilder_EntityBase");
+					
+					if (typeof(temp) != undefined) {
+
+						grid_list = Array.from(temp);
+						// an array of all grids, including the player(s)!!
+
+						//debug:
+						console.log("found " + grid_list.length + " grids");
+
+						for (var i = 0; i < grid_list.length; i++) {
+							
+							//debug:
+							console.log("---");
+							console.log("grid " + i + " is of type " + grid_list[i].getAttribute("xsi:type"));
+							
+							if (grid_list[i].getAttribute("xsi:type") == "MyObjectBuilder_CubeGrid" && isSuitableGrid(grid_list[i], top_blocks) == true) {
+								// test only cube grids, exclude player(s), and only touch large grids
+
+								//debug:
+								console.log("This is a large grid!");
+
+								makeStation(grid_list[i]);
+
+							} else {
+								//debug:
+								console.log("not a large grid, ignoring it");
+							}
+						}
+						
+						serializer = new XMLSerializer();
+						document.getElementById("output").value = serializer.serializeToString(xmlDoc);
+
+					} else {
+						//debug:
+						console.log("could not find any grids");
+					}
+				} else {
+					//debug:
+					console.log("paste field was empty");
+				}
+			}
+
+			function isSuitableGrid(grid, top_blocks) {
+
+				let grid_is_suitable = false;
+				let temp_size = grid.getElementsByTagName("GridSizeEnum")[0];
+
+				if (typeof(temp_size) != undefined) {
+
+					if (temp_size.firstChild.nodeValue == "Large" && isSuspendedWheel(grid, top_blocks) == false) {
+						//debug:
+						console.log("This is a large grid. Setting grid_is_suitable to true.")
+
+						grid_is_suitable = true;
+
+					} else {
+						console.log("not a large grid, or is a suspended wheel. grid_is_suitable stays false.")
+					}
+				} else {
+					//debug:
+					console.log("strangely, this grid has no size");
+				}
+
+				//debug:
+				console.log("returning grid_is_suitable as " + grid_is_suitable);
+
+				return grid_is_suitable;
+			}
+
+			function isSuspendedWheel(grid, top_blocks) {
+				// iterate through cubelist of grid.
+				// If any of the blocks (it'll be only one block, naturally) is a wheel that has an id that is included in top_blocks list, return true
+
+				let is_suspended_wheel = false;
+				let temp = grid.getElementsByTagName("CubeBlocks")[0].getElementsByTagName("MyObjectBuilder_CubeBlock");
+
+				if (typeof(temp) != undefined) {
+
+					let vehicle_blocklist = Array.from(temp);
+						// an array of all blocks in the current grid's cubeblock list
+
+					for (var i = 0; i < vehicle_blocklist.length; i++) {
+
+						if (vehicle_blocklist[i].getAttribute("xsi:type") == "MyObjectBuilder_Wheel") {
+							// Is a wheel
+							
+							//debug:
+							console.log("this is a wheel …");
+							console.log("its EntityId is " + vehicle_blocklist[i].getElementsByTagName("EntityId")[0].firstChild.nodeValue);
+
+							if (top_blocks.includes(vehicle_blocklist[i].getElementsByTagName("EntityId")[0].firstChild.nodeValue)) {
+								// is a wheel that is attached to some suspension because its EntityId was found when looking for TopBlockIds!!
+
+								//debug:
+								console.log("… and it's a suspended wheel!")
+								is_suspended_wheel = true;
+
+							} else {
+								//debug:
+								console.log("… but it's not a suspended wheel.");
+							}
+						} else {
+							//debug:
+							console.log("this is not a wheel-type block");
+						}
+					}
+				} else {
+					//debug:
+					console.log("strangely, this grid's cubelist has no entries. How did you create a non-character grid with no blocks??");
+				}
+
+				return is_suspended_wheel;
+			}
+
+			function makeStation(item) {
+				// Careful now, don't just nuke the grid into submission.
+				// it may already be a station and be supported:
+				// <IsUnsupportedStation>true</IsUnsupportedStation>
+ 				// 
+				// add	   <IsStatic>true</IsStatic>
+				//  <IsUnsupportedStation>true</IsUnsupportedStation>
+
+
+				let existing_isstatic_tag = item.getElementsByTagName("IsStatic")[0];
+
+				if (typeof(existing_isstatic_tag) != 'undefined' && existing_isstatic_tag != null) {
+					// IsStatic tag exists, and may or may not have the content we want.
+
+					//debug:
+					console.log("found an IsStatic tag! It's currently set to " + existing_isstatic_tag.firstChild.nodeValue);
+
+					if (existing_isstatic_tag.firstChild.nodeValue == "false") {
+						// is set to false, but we like it to be true
+
+						//debug:
+						console.log("existing IsStatic is now how we like it, setting to true")
+
+						existing_isstatic_tag.firstChild.nodeValue = "true"
+
+					} else {
+						// is true, so we don't do anything with it
+
+						//debug:
+						console.log("existing IsStatic tag is set to true, not doing anything")
+					}
+
+					//now testing for isunsupported tag, and creating if missing, but leaving it at whatever if present:
+					createUnsupportedTag(item);
+
+					//existing_isstatic_tag.parentNode.removeChild(existing_isstatic_tag);
+
+				} else {
+					// no IsStatic tag found, so we create it and the accompanying IsUnsupportedStation
+
+					//debug:
+					console.log("could not find an IsStatic tag, we're free to create a new one.");
+
+					item.appendChild(createNewTag("IsStatic", "true"));
+					createUnsupportedTag(item);
+
+				}
+			}
+
+			function createNewTag(type_of_tag, content_of_tag) {
+
+				//debug:
+				console.log("Creating new tag of type " + type_of_tag + " with content of " + content_of_tag)
+
+				let new_tag = document.createElementNS(null, type_of_tag);
+				let tag_text = document.createTextNode(content_of_tag);
+				new_tag.appendChild(tag_text);
+
+				return new_tag;
+			}
+
+			function createUnsupportedTag(item) {
+				
+				let existing_isunsupported_tag = item.getElementsByTagName("IsUnsupportedStation")[0];
+
+				if (typeof(existing_isunsupported_tag) != 'undefined' && existing_isunsupported_tag != null) {
+					// exists
+
+					//debug:
+					console.log("also found an IsUnsupportedStation tag! It's currently set to " + existing_isunsupported_tag.firstChild.nodeValue);
+
+				} else {
+					//debug:
+					console.log("There was no IsUnsupportedStation tag. Need to create one.");
+
+					item.appendChild(createNewTag("IsUnsupportedStation", "true"));
+
+				}
+			}
+
+			//todo: provide a clickable download link if people so desire
+			//https://ourcodeworld.com/articles/read/189/how-to-create-a-file-and-generate-a-download-with-javascript-in-the-browser-without-a-server
+
+		</script>
+		<link rel="icon" type="image/x-icon" href="favicon.ico">
+	</head>
+	<body>
+		<h1>Make station</h1>
+		<p>This tool turns ALL large grids (except wheels on suspensions) into stations. May your deity of choice help you &hellip;</p>
+		<p style="color: red; font-weight: bold;">Warning: Apparently, there's a distinction between supported and unsupported stations. Presumably this has something to do with stations with ground contact. This tool currently produces only unsupported station grids. This shouldn't be a problem because ships wouldn't be intersecting with the ground in the first place. That said, proceed with caution.</p>
+		<p>Paste your <em>sandbox_0_0_0_.sbs</em> (not your <strong><em>sandbox.sbc</em></strong> file!!) contents here:</p>
+		<p><textarea id="paste" rows="10" cols="80"></textarea></p>
+		<p><button type="button" onclick="findlargegrids()">Make stations</button></p>
+		<p>Your modified <em>sandbox_0_0_0_.sbs</em> file:</p>
+		<p><textarea id="output" rows="10" cols="80"></textarea></p>
+		<p>Remember to delete the caching file <em>sandbox_0_0_0_.sbsB5</em> before launching or it will take precedence over the SBS file!</p>
+		<p>Deleting the SBSB5 file will cause SE to complain that "the file format is outdated". This is expected and shouldn't be a problem.</p>
+		<p><a href="https://puddingofdoom.github.io/">More tools</a></p>
+	</body>
+</html>

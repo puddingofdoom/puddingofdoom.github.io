@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<style type="text/css">
+			body { font-family:sans-serif; }
+		</style>
+		<script type="text/javascript">
+			function extractgps(paste){
+				var paste = document.getElementById("paste").value;
+				if (paste.length > 0) {
+					var gpslist, parser, xmlDoc
+					parser = new DOMParser();
+					xmlDoc = parser.parseFromString(paste, "text/xml");
+					gpslist = xmlDoc.getElementsByTagName("Gps")[0].getElementsByTagName("dictionary")[0].getElementsByTagName("item")[0].getElementsByTagName("Value")[0].getElementsByTagName("Entries")[0].getElementsByTagName("Entry");
+					Array.from(gpslist).forEach(getcoords);
+				}
+			}
+			function getcoords(item, index) {
+				//GPS:10 Au 110 Co 100 Fe 60:50279.7:-3100.48:32556.79:
+				var name=item.getElementsByTagName("name")[0].firstChild.nodeValue;
+				var x=item.getElementsByTagName("coords")[0].getElementsByTagName("X")[0].firstChild.nodeValue;
+				var y=item.getElementsByTagName("coords")[0].getElementsByTagName("Y")[0].firstChild.nodeValue;
+				var z=item.getElementsByTagName("coords")[0].getElementsByTagName("Z")[0].firstChild.nodeValue;
+				document.getElementById("output").value = document.getElementById("output").value + "\nGPS:" + name + ":" + x + ":" + y + ":" + z + ":";
+			}
+		</script>
+		<link rel="icon" type="image/x-icon" href="favicon.ico">
+	</head>
+	<body>
+		<h1>GPS extractor</h1>
+		<p>This tool extracts all the GPS bookmarks from an SE save file and formats them for easy pasting into the in-game chat or for use with "New from clipboard". Note that you can only create twenty (20) new bookmarks at once, so if your list is longer, do it in batches.</p>
+		<p>Paste your <em>sandbox.sbc</em> contents here:</p>
+		<p><textarea id="paste" rows="10" cols="80"></textarea></p>
+		<p><button type="button" onclick="extractgps()">Extract GPS markers!</button></p>
+		<p>Your markers:</p>
+		<p><textarea id="output" rows="10" cols="80"></textarea></p>
+		<p><a href="https://puddingofdoom.github.io/">More tools</a></p>
+	</body>
+</html>

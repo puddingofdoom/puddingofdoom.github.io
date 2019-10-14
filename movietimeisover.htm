@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<style type="text/css">
+			body { font-family:sans-serif;}
+		</style>
+		<script type="text/javascript">
+			function findprojectors(paste){
+
+				var paste = document.getElementById("paste").value;
+
+				if (paste.length > 0) {
+
+					var parser, xmlDoc
+					parser = new DOMParser();
+					xmlDoc = parser.parseFromString(paste, "application/xml");
+					
+					let temp = xmlDoc.getElementsByTagName("MyObjectBuilder_CubeBlock");
+					
+					if (typeof(temp) != undefined) {
+
+						cube_list = Array.from(temp);
+						// an array of all cubes
+
+						//debug:
+						console.log("found " + cube_list.length + " projectors");
+
+						for (var i = 0; i < cube_list.length; i++) {
+							
+							//debug:
+							console.log("---");
+							console.log("cube " + i + " is of type " + cube_list[i].getAttribute("xsi:type"));
+							
+							if (cube_list[i].getAttribute("xsi:type") == "MyObjectBuilder_Projector") {
+								// change only projectors
+								console.log("This is a projector!");
+
+								switchoff(cube_list[i]);
+							} else {
+								console.log("not a projector type, ignoring this cube");
+							}
+						}
+						
+						serializer = new XMLSerializer();
+						document.getElementById("output").value = serializer.serializeToString(xmlDoc);
+					} else {
+						console.log("could not find any grids");
+					}
+				} else {
+					console.log("paste field was empty");
+				}
+			}
+
+			function switchoff(item) {
+				// if <Enabled> is present, delete
+				// if <Enabled> is not present, add.
+				//
+				// <Enabled>false</Enabled>
+
+				var enabled_tag = item.getElementsByTagName("Enabled")[0];
+
+				if (typeof(enabled_tag) != 'undefined' && enabled_tag != null) {
+					// exists, and may or may not have the content we want.
+					// So, we nuke it. It's the only way to be sure.
+					console.log("found an Enabled tag, will kill it.");
+					enabled_tag.parentNode.removeChild(enabled_tag);
+				} else {
+					console.log("could not find an Enabled tag");
+				}
+
+				var enabled_tag = document.createElementNS(null,"Enabled");
+				var enabled_false = document.createTextNode("false");
+				enabled_tag.appendChild(enabled_false);
+				item.appendChild(enabled_tag);
+			}
+
+			//todo: provide a clickable download link if people so desire
+			//https://ourcodeworld.com/articles/read/189/how-to-create-a-file-and-generate-a-download-with-javascript-in-the-browser-without-a-server
+
+		</script>
+		<link rel="icon" type="image/x-icon" href="favicon.ico">
+	</head>
+	<body>
+		<h1>Projectors off</h1>
+		<p>This tool turns off all projectors in a save file.</p>
+		<p>Paste your <em>sandbox_0_0_0_.sbs</em> (not your <strong><em>sandbox.sbc</em></strong> file!!) contents here:</p>
+		<p><textarea id="paste" rows="10" cols="80"></textarea></p>
+		<p><button type="button" onclick="findprojectors()">Projectors off</button></p>
+		<p>Your modified <em>sandbox_0_0_0_.sbs</em> file:</p>
+		<p><textarea id="output" rows="10" cols="80"></textarea></p>
+		<p>Remember to delete the caching file <em>sandbox_0_0_0_.sbsB5</em> before launching or it will take precedence over the SBS file!</p>
+		<p>Deleting the SBSB5 file will cause SE to complain that "the file format is outdated". This is expected and shouldn't be a problem.</p>
+		<p><a href="https://puddingofdoom.github.io/">More tools</a></p>
+	</body>
+</html>
