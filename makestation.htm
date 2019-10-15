@@ -29,12 +29,14 @@
 							console.log("filling top_blocks, found EntityId " + top_blocks_array[i].firstChild.textContent);
 						}
 
-						// a list of ids of all subgrid blocks that are attached to a parent part, like wheels to a suspension and rotor tops to rotor bodies.
-						// lack of distinction doesn't matter. Later, we're only checking the topblockid of suspensions, not of rotors, so we'll only ever look for wheels anyhow.
+						// A list of ids of all subgrid blocks that are attached to a parent part,
+						//  like wheels to a suspension and rotor tops to rotor bodies.
+						// Lack of distinction doesn't matter. Later, we're only checking the topblockid of suspensions,
+						//  not of rotors, so we'll only ever look for wheels anyhow.
 					}
-					
+
 					let temp = xmlDoc.getElementsByTagName("MyObjectBuilder_EntityBase");
-					
+
 					if (typeof(temp) != undefined) {
 
 						grid_list = Array.from(temp);
@@ -44,7 +46,7 @@
 						console.log("found " + grid_list.length + " grids");
 
 						for (var i = 0; i < grid_list.length; i++) {
-							
+
 							//debug:
 							console.log("---");
 							console.log("grid " + i + " is of type " + grid_list[i].getAttribute("xsi:type"));
@@ -62,7 +64,7 @@
 								console.log("not a large grid, ignoring it");
 							}
 						}
-						
+
 						serializer = new XMLSerializer();
 						document.getElementById("output").value = serializer.serializeToString(xmlDoc);
 
@@ -119,7 +121,7 @@
 
 						if (vehicle_blocklist[i].getAttribute("xsi:type") == "MyObjectBuilder_Wheel") {
 							// Is a wheel
-							
+
 							//debug:
 							console.log("this is a wheel …");
 							console.log("its EntityId is " + vehicle_blocklist[i].getElementsByTagName("EntityId")[0].firstChild.nodeValue);
@@ -150,11 +152,12 @@
 
 			function makeStation(item) {
 				// Careful now, don't just nuke the grid into submission.
-				// it may already be a station and be supported:
-				// <IsUnsupportedStation>true</IsUnsupportedStation>
- 				// 
-				// add	   <IsStatic>true</IsStatic>
-				//  <IsUnsupportedStation>true</IsUnsupportedStation>
+				// It may already be a station and be supported:
+				//  <IsUnsupportedStation>false</IsUnsupportedStation>
+				//
+				// Add <IsStatic>true</IsStatic>
+				// and <IsUnsupportedStation>true</IsUnsupportedStation>
+				//  as necessary.
 
 
 				let existing_isstatic_tag = item.getElementsByTagName("IsStatic")[0];
@@ -210,7 +213,7 @@
 			}
 
 			function createUnsupportedTag(item) {
-				
+
 				let existing_isunsupported_tag = item.getElementsByTagName("IsUnsupportedStation")[0];
 
 				if (typeof(existing_isunsupported_tag) != 'undefined' && existing_isunsupported_tag != null) {
