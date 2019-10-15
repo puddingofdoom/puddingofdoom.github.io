@@ -6,7 +6,7 @@
 			body { font-family:sans-serif;}
 		</style>
 		<script type="text/javascript">
-			function findvehicles(paste) {
+			function findgrids(paste) {
 
 				var paste = document.getElementById("paste").value;
 
@@ -15,37 +15,37 @@
 					var parser, xmlDoc
 					parser = new DOMParser();
 					xmlDoc = parser.parseFromString(paste, "application/xml");
-					
+
 					let temp = xmlDoc.getElementsByTagName("MyObjectBuilder_EntityBase");
-					
+
 					if (typeof(temp) != undefined) {
 
-						vehicle_list = Array.from(temp);
+						grid_list = Array.from(temp);
 						// an array of all grids, including the player(s)!!
 
 						//debug:
-						console.log("found " + vehicle_list.length + " grids");
+						console.log("found " + grid_list.length + " grids");
 
-						for (var i = 0; i < vehicle_list.length; i++) {
-							
+						for (var i = 0; i < grid_list.length; i++) {
+
 							//debug:
 							console.log("---");
-							console.log("grid " + i + " is of type " + vehicle_list[i].getAttribute("xsi:type"));
-							
-							if (vehicle_list[i].getAttribute("xsi:type") == "MyObjectBuilder_CubeGrid" && findCockpits(vehicle_list[i]) == true) {
+							console.log("grid " + i + " is of type " + grid_list[i].getAttribute("xsi:type"));
+
+							if (grid_list[i].getAttribute("xsi:type") == "MyObjectBuilder_CubeGrid" && findCockpits(grid_list[i]) == true) {
 								// test only cube grids, exclude player(s)
 
 								//debug:
 								console.log("This grid may have a handbrake to set!");
 
-								setHandbrake(vehicle_list[i]);
+								setHandbrake(grid_list[i]);
 
 							} else {
 								//debug:
-								console.log("not a vehicle type, ignoring this grid");
+								console.log("not a grid type, ignoring this grid");
 							}
 						}
-						
+
 						serializer = new XMLSerializer();
 						document.getElementById("output").value = serializer.serializeToString(xmlDoc);
 
@@ -59,23 +59,23 @@
 				}
 			}
 
-			function findCockpits(item) {
+			function findCockpits(grid) {
 
 				const controlblocktypes = ["MyObjectBuilder_Cockpit", "MyObjectBuilder_ShipController", "MyObjectBuilder_RemoteControl"];
 
-				let vehicle_blocklist_contains_cockpit = false;
-				let temp = item.getElementsByTagName("CubeBlocks")[0].getElementsByTagName("MyObjectBuilder_CubeBlock");
+				let grid_blocklist_contains_cockpit = false;
+				let temp = grid.getElementsByTagName("CubeBlocks")[0].getElementsByTagName("MyObjectBuilder_CubeBlock");
 
 				if (typeof(temp) != undefined) {
 
-					let vehicle_blocklist = Array.from(temp);
+					let grid_blocklist = Array.from(temp);
 						// an array of all blocks in the current grid
 
-					if (vehicle_blocklist.length > 0) {
+					if (grid_blocklist.length > 0) {
 
-						for (var i = 0; i < vehicle_blocklist.length; i++) {
+						for (var i = 0; i < grid_blocklist.length; i++) {
 
-							if (controlblocktypes.includes(vehicle_blocklist[i].getAttribute("xsi:type"))) {
+							if (controlblocktypes.includes(grid_blocklist[i].getAttribute("xsi:type"))) {
 								// Check type of blocklist entry. If following is found, set and return true.
 								// MyObjectBuilder_Cockpit
 								// MyObjectBuilder_ShipController
@@ -84,7 +84,7 @@
 								//debug:
 								console.log("this is a control-type block!");
 
-								vehicle_blocklist_contains_cockpit = true;
+								grid_blocklist_contains_cockpit = true;
 
 							} else {
 								//debug:
@@ -93,24 +93,24 @@
 						}
 					} else {
 						//debug:
-						console.log("vehicle_blocklist empty!");
+						console.log("grid_blocklist empty!");
 					}
 				} else {
 					//debug:
-					console.log("strangely, this vehicle has no blocklist");
+					console.log("strangely, this grid has no blocklist");
 				}
 
 				//debug:
-				console.log("vehicle_blocklist_contains_cockpit is " + vehicle_blocklist_contains_cockpit);
+				console.log("grid_blocklist_contains_cockpit is " + grid_blocklist_contains_cockpit);
 
-				return vehicle_blocklist_contains_cockpit;
+				return grid_blocklist_contains_cockpit;
 			}
 
-			function setHandbrake(item) {
+			function setHandbrake(grid) {
 				// if <handbrake> is present, nuke.
 				// add <Handbrake>true</Handbrake>
 
-				let existing_handbrake_tag = item.getElementsByTagName("Handbrake")[0];
+				let existing_handbrake_tag = grid.getElementsByTagName("Handbrake")[0];
 
 				if (typeof(existing_handbrake_tag) != 'undefined' && existing_handbrake_tag != null) {
 					// exists, and may or may not have the content we want.
@@ -128,7 +128,7 @@
 				let new_handbrake_tag = document.createElementNS(null,"Handbrake");
 				let handbrake_true = document.createTextNode("true");
 				new_handbrake_tag.appendChild(handbrake_true);
-				item.appendChild(new_handbrake_tag);
+				grid.appendChild(new_handbrake_tag);
 			}
 
 			//todo: provide a clickable download link if people so desire
@@ -142,7 +142,7 @@
 		<p>This tool sets the handbrakes for all cockpits, remote control blocks, and control or flight seats. It does not toggle anything else that would normally be affected by pressing P.</p>
 		<p>Paste your <em>sandbox_0_0_0_.sbs</em> (not your <strong><em>sandbox.sbc</em></strong> file!!) contents here:</p>
 		<p><textarea id="paste" rows="10" cols="80"></textarea></p>
-		<p><button type="button" onclick="findvehicles()">Set all handbrakes</button></p>
+		<p><button type="button" onclick="findgrids()">Set all handbrakes</button></p>
 		<p>Your modified <em>sandbox_0_0_0_.sbs</em> file:</p>
 		<p><textarea id="output" rows="10" cols="80"></textarea></p>
 		<p>Remember to delete the caching file <em>sandbox_0_0_0_.sbsB5</em> before launching or it will take precedence over the SBS file!</p>
