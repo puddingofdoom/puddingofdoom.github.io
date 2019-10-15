@@ -17,7 +17,7 @@
 					xmlDoc = parser.parseFromString(paste, "application/xml");
 
 					let temp_top_blocks = xmlDoc.getElementsByTagName("TopBlockId");
-					
+
 					if (typeof(temp_top_blocks) != undefined) {
 						let top_blocks_array = Array.from(temp_top_blocks);
 						var top_blocks = [];
@@ -150,7 +150,7 @@
 				return is_suspended_wheel;
 			}
 
-			function makeStation(item) {
+			function makeStation(grid) {
 				// Careful now, don't just nuke the grid into submission.
 				// It may already be a station and be supported:
 				//  <IsUnsupportedStation>false</IsUnsupportedStation>
@@ -160,7 +160,7 @@
 				//  as necessary.
 
 
-				let existing_isstatic_tag = item.getElementsByTagName("IsStatic")[0];
+				let existing_isstatic_tag = grid.getElementsByTagName("IsStatic")[0];
 
 				if (typeof(existing_isstatic_tag) != 'undefined' && existing_isstatic_tag != null) {
 					// IsStatic tag exists, and may or may not have the content we want.
@@ -184,7 +184,7 @@
 					}
 
 					//now testing for isunsupported tag, and creating if missing, but leaving it at whatever if present:
-					createUnsupportedTag(item);
+					createUnsupportedTag(grid);
 
 					//existing_isstatic_tag.parentNode.removeChild(existing_isstatic_tag);
 
@@ -194,8 +194,8 @@
 					//debug:
 					console.log("could not find an IsStatic tag, we're free to create a new one.");
 
-					item.appendChild(createNewTag("IsStatic", "true"));
-					createUnsupportedTag(item);
+					grid.appendChild(createNewTag("IsStatic", "true"));
+					createUnsupportedTag(grid);
 
 				}
 			}
@@ -212,9 +212,9 @@
 				return new_tag;
 			}
 
-			function createUnsupportedTag(item) {
+			function createUnsupportedTag(grid) {
 
-				let existing_isunsupported_tag = item.getElementsByTagName("IsUnsupportedStation")[0];
+				let existing_isunsupported_tag = grid.getElementsByTagName("IsUnsupportedStation")[0];
 
 				if (typeof(existing_isunsupported_tag) != 'undefined' && existing_isunsupported_tag != null) {
 					// exists
@@ -226,7 +226,7 @@
 					//debug:
 					console.log("There was no IsUnsupportedStation tag. Need to create one.");
 
-					item.appendChild(createNewTag("IsUnsupportedStation", "true"));
+					grid.appendChild(createNewTag("IsUnsupportedStation", "true"));
 
 				}
 			}
