@@ -6,76 +6,101 @@
 			body { font-family:sans-serif;}
 		</style>
 		<script type="text/javascript">
-			function findlargegrids(paste) {
-
+			function loadsbs() {
+				//get content of either the file or the textbox
 				var paste = document.getElementById("paste").value;
 
 				if (paste.length > 0) {
-
-					var parser, xmlDoc
-					parser = new DOMParser();
-					xmlDoc = parser.parseFromString(paste, "application/xml");
-
-					let temp_top_blocks = xmlDoc.getElementsByTagName("TopBlockId");
-
-					if (typeof(temp_top_blocks) != undefined) {
-						let top_blocks_array = Array.from(temp_top_blocks);
-						var top_blocks = [];
-
-						for (i = 0; i < top_blocks_array.length; i++) {
-							top_blocks.push(top_blocks_array[i].firstChild.textContent);
-
-							//debug:
-							console.log("filling top_blocks, found EntityId " + top_blocks_array[i].firstChild.textContent);
-						}
-
-						// A list of ids of all subgrid blocks that are attached to a parent part,
-						//  like wheels to a suspension and rotor tops to rotor bodies.
-						// Lack of distinction doesn't matter. Later, we're only checking the topblockid of suspensions,
-						//  not of rotors, so we'll only ever look for wheels anyhow.
-					}
-
-					let temp = xmlDoc.getElementsByTagName("MyObjectBuilder_EntityBase");
-
-					if (typeof(temp) != undefined) {
-
-						grid_list = Array.from(temp);
-						// an array of all grids, including the player(s)!!
-
-						//debug:
-						console.log("found " + grid_list.length + " grids");
-
-						for (var i = 0; i < grid_list.length; i++) {
-
-							//debug:
-							console.log("---");
-							console.log("grid " + i + " is of type " + grid_list[i].getAttribute("xsi:type"));
-							
-							if (grid_list[i].getAttribute("xsi:type") == "MyObjectBuilder_CubeGrid" && isSuitableGrid(grid_list[i], top_blocks) == true) {
-								// test only cube grids, exclude player(s), and only touch large grids
-
-								//debug:
-								console.log("This is a large grid!");
-
-								makeStation(grid_list[i]);
-
-							} else {
-								//debug:
-								console.log("not a large grid, ignoring it");
-							}
-						}
-
-						serializer = new XMLSerializer();
-						document.getElementById("output").value = serializer.serializeToString(xmlDoc);
-
-					} else {
-						//debug:
-						console.log("could not find any grids");
-					}
 				} else {
 					//debug:
 					console.log("paste field was empty");
 				}
+
+				//return paste;
+				//returns a long string
+
+				var selected_file = document.getElementById("sbs_file").files[0];
+
+				var reader = new FileReader();
+				//reader.onload=function(evt) {
+				//	console.log(evt.target.result.length)
+				//}
+				reader.readAsText(selected_file);
+				//alert(reader.length);
+				console.log(reader.result);
+
+				// https://developer.mozilla.org/en-US/docs/Web/API/FileReader/FileReader
+				// https://www.javascripture.com/FileReader
+				// https://www.w3.org/TR/file-upload/#reading-a-file
+
+			}
+			// end function loadsbs()
+		</script>
+		<script type="text/javascript">
+
+			function findlargegrids(sbs) {
+
+				var parser, xmlDoc
+				parser = new DOMParser();
+				xmlDoc = parser.parseFromString(sbs, "application/xml");
+
+				let temp_top_blocks = xmlDoc.getElementsByTagName("TopBlockId");
+
+				if (typeof(temp_top_blocks) != undefined) {
+					let top_blocks_array = Array.from(temp_top_blocks);
+					var top_blocks = [];
+
+					for (i = 0; i < top_blocks_array.length; i++) {
+						top_blocks.push(top_blocks_array[i].firstChild.textContent);
+
+						//debug:
+						console.log("filling top_blocks, found EntityId " + top_blocks_array[i].firstChild.textContent);
+					}
+
+					// A list of ids of all subgrid blocks that are attached to a parent part,
+					//  like wheels to a suspension and rotor tops to rotor bodies.
+					// Lack of distinction doesn't matter. Later, we're only checking the topblockid of suspensions,
+					//  not of rotors, so we'll only ever look for wheels anyhow.
+				}
+
+				let temp = xmlDoc.getElementsByTagName("MyObjectBuilder_EntityBase");
+
+				if (typeof(temp) != undefined) {
+
+					grid_list = Array.from(temp);
+					// an array of all grids, including the player(s)!!
+
+					//debug:
+					console.log("found " + grid_list.length + " grids");
+
+					for (var i = 0; i < grid_list.length; i++) {
+
+						//debug:
+						console.log("---");
+						console.log("grid " + i + " is of type " + grid_list[i].getAttribute("xsi:type"));
+						
+						if (grid_list[i].getAttribute("xsi:type") == "MyObjectBuilder_CubeGrid" && isSuitableGrid(grid_list[i], top_blocks) == true) {
+							// test only cube grids, exclude player(s), and only touch large grids
+
+							//debug:
+							console.log("This is a large grid!");
+
+							makeStation(grid_list[i]);
+
+						} else {
+							//debug:
+							console.log("not a large grid, ignoring it");
+						}
+					}
+
+					serializer = new XMLSerializer();
+					document.getElementById("output").value = serializer.serializeToString(xmlDoc);
+
+				} else {
+					//debug:
+					console.log("could not find any grids");
+				}
+
 			}
 
 			function isSuitableGrid(grid, top_blocks) {
@@ -235,23 +260,34 @@
 			//https://ourcodeworld.com/articles/read/189/how-to-create-a-file-and-generate-a-download-with-javascript-in-the-browser-without-a-server
 
 		</script>
+		<script type="text/javascript">
+			function clearother(which) {
+				document.getElementById(which).value = null;
+			}
+		</script>
+		<script type="text/javascript">
+			function checkapisupport() {
+				if (window.File && window.FileReader && window.FileList && window.Blob) {
+					// Great success! All the File APIs are supported.
+					// Carry on silently.
+				} else {
+					alert('The File APIs are not fully supported in this browser.');
+				}
+			}
+		</script>
 		<link rel="icon" type="image/x-icon" href="favicon.ico">
 	</head>
-	<body>
+	<body onload="checkapisupport()">
 		<h1>Make station</h1>
 		<p>This tool turns ALL large grids (except wheels on suspensions) into stations. May your deity of choice help you &hellip;</p>
 		<p style="color: red; font-weight: bold;">Warning: Apparently, there's a distinction between supported and unsupported stations. Presumably this has something to do with stations with ground contact. This tool currently produces only unsupported station grids. This shouldn't be a problem because ships wouldn't be intersecting with the ground in the first place. That said, proceed with caution.</p>
-		<p>To begin, please provide your <em>sandbox_0_0_0_.sbs</em> (not your <strong><em>sandbox.sbc</em></strong> file!!):</p>
-		<p>
-			<input type="radio" id="file_input" name="sbs" value="file_input" checked>
-			<label for="file_input">Browse file system:</label><input type="file" name="sbs_file" accept="application/xml,.sbs">
-		</p>
-		<p><input type="radio" id="text_input" name="sbs" value="text_input">
-			<label for="text_input">Or paste file contents:</label></p>
-		<p><textarea id="paste" rows="10" cols="80"></textarea></p>
-		<p><button type="button" onclick="findlargegrids()">Make stations</button></p>
+		<p>To begin, please provide your <em>sandbox_0_0_0_.sbs</em> (<strong>not</strong> your <em>sandbox.sbc</em> file!!):</p>
+		<p>Browse file system: <input id="sbs_file" type="file" name="sbs_file" accept="application/xml,.sbs" onchange="clearother('paste')"></p>
+		<p>Or paste file contents (slow for MB-sized files):<br><textarea id="paste" rows="10" cols="80" onkeyup="clearother('sbs_file')"></textarea></p>
+		<!--<p><button type="button" onclick="findlargegrids()">Make stations</button></p>-->
+		<p><button type="button" onclick="loadsbs()">Make stations</button></p>
 		<p>Your modified <em>sandbox_0_0_0_.sbs</em> file:</p>
-		<p><textarea id="output" rows="10" cols="80"></textarea></p>
+		<p><textarea id="output" rows="10" cols="80" disabled="disabled"></textarea></p>
 		<p>Remember to delete the caching file <em>sandbox_0_0_0_.sbsB5</em> before launching or it will take precedence over the SBS file!</p>
 		<p>Deleting the SBSB5 file will cause SE to complain that "the file format is outdated". This is expected and shouldn't be a problem.</p>
 		<p><a href="https://puddingofdoom.github.io/">More tools</a></p>
