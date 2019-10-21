@@ -6,55 +6,97 @@
 			body { font-family:sans-serif;}
 		</style>
 		<script type="text/javascript">
-			function loadsbs() {
-				//get content of either the file or the textbox
-				var paste = document.getElementById("paste").value;
+
+			function which() {
+				let paste = document.getElementById("paste").value;
+				let selected_file = document.getElementById("sbs_file").files[0];
+
+				let sbs_type="none";
 
 				if (paste.length > 0) {
+					sbs_type = "paste";
 				} else {
 					//debug:
 					console.log("paste field was empty");
 				}
 
-				//return paste;
-				//returns a long string
+				if (selected_file) {
+					sbs_type = "file";
+				} else {
+					//debug:
+					console.log("no file selected");
+				}
 
+				return sbs_type;
+
+			}
+
+			function loadsbs() {
+				var sbs_contents;
+
+				switch (which()) {
+					case "paste":
+						findlargegrids(document.getElementById("paste").value);
+						break;
+					case "file":
+						load_from_file(event);
+						break;
+					case "none":
+						console.log("no mode selected, doing nothing");
+					default:
+						console.log("You really broke it this time!");
+				}
+				return sbs_contents
+			}
+
+			function load_from_file(event) {
 				var selected_file = document.getElementById("sbs_file").files[0];
+				let reader = new FileReader();
 
-				var reader = new FileReader();
-				//reader.onload=function(evt) {
-				//	console.log(evt.target.result.length)
-				//}
+				//reader.onprogress = updateProgress;
+				reader.onloadend = function (event, callback) {
+					//debug:
+					console.log(event.target.result.length);
+
+					findlargegrids(event.target.result);
+
+				};
+				//reader.onerror = errorHandler;
+
 				reader.readAsText(selected_file);
-				//alert(reader.length);
-				console.log(reader.result);
 
 				// https://developer.mozilla.org/en-US/docs/Web/API/FileReader/FileReader
 				// https://www.javascripture.com/FileReader
 				// https://www.w3.org/TR/file-upload/#reading-a-file
-
 			}
 			// end function loadsbs()
-		</script>
-		<script type="text/javascript">
 
-			function findlargegrids(sbs) {
+			function findlargegrids(sbs_contents) {
 
-				var parser, xmlDoc
+				var parser, xmlDoc;
 				parser = new DOMParser();
-				xmlDoc = parser.parseFromString(sbs, "application/xml");
+				xmlDoc = parser.parseFromString(sbs_contents,"application/xml");
 
 				let temp_top_blocks = xmlDoc.getElementsByTagName("TopBlockId");
 
 				if (typeof(temp_top_blocks) != undefined) {
-					let top_blocks_array = Array.from(temp_top_blocks);
-					var top_blocks = [];
+					let all_top_blocks = Array.from(temp_top_blocks);
+					var top_block_ids = [];
+					//debug:
+					console.log("found " + all_top_blocks.length + " top blocks");
 
-					for (i = 0; i < top_blocks_array.length; i++) {
-						top_blocks.push(top_blocks_array[i].firstChild.textContent);
+					for (i = 0; i < all_top_blocks.length; i++) {
 
 						//debug:
-						console.log("filling top_blocks, found EntityId " + top_blocks_array[i].firstChild.textContent);
+						console.log("Examining EntityId #" + i + ", " + all_top_blocks[i].parentNode.getElementsByTagName("EntityId")[0].firstChild.textContent + ", " + all_top_blocks[i].parentNode.getElementsByTagName("SubtypeName")[0].firstChild.textContent + " …")
+						if (all_top_blocks[i].firstChild) {
+							top_block_ids.push(all_top_blocks[i].firstChild.textContent);
+							//debug:
+							console.log("found TopBlockId " + all_top_blocks[i].firstChild.textContent);
+						} else {
+							//debug:
+							console.log("It has no TopBlockId! Is it empty?");
+						}
 					}
 
 					// A list of ids of all subgrid blocks that are attached to a parent part,
@@ -79,7 +121,7 @@
 						console.log("---");
 						console.log("grid " + i + " is of type " + grid_list[i].getAttribute("xsi:type"));
 						
-						if (grid_list[i].getAttribute("xsi:type") == "MyObjectBuilder_CubeGrid" && isSuitableGrid(grid_list[i], top_blocks) == true) {
+						if (grid_list[i].getAttribute("xsi:type") == "MyObjectBuilder_CubeGrid" && isSuitableGrid(grid_list[i], top_block_ids) == true) {
 							// test only cube grids, exclude player(s), and only touch large grids
 
 							//debug:
@@ -103,14 +145,14 @@
 
 			}
 
-			function isSuitableGrid(grid, top_blocks) {
+			function isSuitableGrid(grid, top_block_ids) {
 
 				let grid_is_suitable = false;
 				let temp_size = grid.getElementsByTagName("GridSizeEnum")[0];
 
 				if (typeof(temp_size) != undefined) {
 
-					if (temp_size.firstChild.nodeValue == "Large" && isSuspendedWheel(grid, top_blocks) == false) {
+					if (temp_size.firstChild.nodeValue == "Large" && isSuspendedWheel(grid, top_block_ids) == false) {
 						//debug:
 						console.log("This is a large grid. Setting grid_is_suitable to true.")
 
@@ -130,9 +172,9 @@
 				return grid_is_suitable;
 			}
 
-			function isSuspendedWheel(grid, top_blocks) {
+			function isSuspendedWheel(grid, top_block_ids) {
 				// iterate through cubelist of grid.
-				// If any of the blocks (it'll be only one block, naturally) is a wheel that has an id that is included in top_blocks list, return true
+				// If any of the blocks (it'll be only one block, naturally) is a wheel that has an id that is included in top_block_ids list, return true
 
 				let is_suspended_wheel = false;
 				let temp = grid.getElementsByTagName("CubeBlocks")[0].getElementsByTagName("MyObjectBuilder_CubeBlock");
@@ -151,7 +193,7 @@
 							console.log("this is a wheel …");
 							console.log("its EntityId is " + vehicle_blocklist[i].getElementsByTagName("EntityId")[0].firstChild.nodeValue);
 
-							if (top_blocks.includes(vehicle_blocklist[i].getElementsByTagName("EntityId")[0].firstChild.nodeValue)) {
+							if (top_block_ids.includes(vehicle_blocklist[i].getElementsByTagName("EntityId")[0].firstChild.nodeValue)) {
 								// is a wheel that is attached to some suspension because its EntityId was found when looking for TopBlockIds!!
 
 								//debug:
@@ -262,6 +304,7 @@
 		</script>
 		<script type="text/javascript">
 			function clearother(which) {
+				//clears whichever input field is the other one from which you touched last
 				document.getElementById(which).value = null;
 			}
 		</script>
@@ -284,8 +327,7 @@
 		<p>To begin, please provide your <em>sandbox_0_0_0_.sbs</em> (<strong>not</strong> your <em>sandbox.sbc</em> file!!):</p>
 		<p>Browse file system: <input id="sbs_file" type="file" name="sbs_file" accept="application/xml,.sbs" onchange="clearother('paste')"></p>
 		<p>Or paste file contents (slow for MB-sized files):<br><textarea id="paste" rows="10" cols="80" onkeyup="clearother('sbs_file')"></textarea></p>
-		<!--<p><button type="button" onclick="findlargegrids()">Make stations</button></p>-->
-		<p><button type="button" onclick="loadsbs()">Make stations</button></p>
+		<p><button onmouseup="loadsbs()">Make stations</button></p>
 		<p>Your modified <em>sandbox_0_0_0_.sbs</em> file:</p>
 		<p><textarea id="output" rows="10" cols="80" disabled="disabled"></textarea></p>
 		<p>Remember to delete the caching file <em>sandbox_0_0_0_.sbsB5</em> before launching or it will take precedence over the SBS file!</p>
