@@ -73,6 +73,7 @@
 
 			function findlargegrids(sbs_contents) {
 
+				document.getElementById("output").value = "";
 				var parser, xmlDoc;
 				parser = new DOMParser();
 				xmlDoc = parser.parseFromString(sbs_contents,"application/xml");
@@ -137,6 +138,9 @@
 
 					serializer = new XMLSerializer();
 					document.getElementById("output").value = serializer.serializeToString(xmlDoc);
+
+					//debug:
+					console.log("Done!");
 
 				} else {
 					//debug:
@@ -329,7 +333,7 @@
 		<p>Or paste file contents (slow for MB-sized files):<br><textarea id="paste" rows="10" cols="80" onkeyup="clearother('sbs_file')"></textarea></p>
 		<p><button onmouseup="loadsbs()">Make stations</button></p>
 		<p>Your modified <em>sandbox_0_0_0_.sbs</em> file:</p>
-		<p><textarea id="output" rows="10" cols="80" disabled="disabled"></textarea></p>
+		<p><textarea id="output" rows="10" cols="80"></textarea></p>
 		<p>Remember to delete the caching file <em>sandbox_0_0_0_.sbsB5</em> before launching or it will take precedence over the SBS file!</p>
 		<p>Deleting the SBSB5 file will cause SE to complain that "the file format is outdated". This is expected and shouldn't be a problem.</p>
 		<p><a href="https://puddingofdoom.github.io/">More tools</a></p>
