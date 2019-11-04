@@ -4,6 +4,8 @@
 		<meta charset="UTF-8" />
 		<style type="text/css">
 			body { font-family:sans-serif;}
+			#input_sbs_file { background-color: unset;}
+			#input_sbs_paste { background-color: unset;}
 		</style>
 		<script type="text/javascript">
 
@@ -322,9 +324,11 @@
 
 		</script>
 		<script type="text/javascript">
-			function clearother(which) {
+			function clearother(which,caller) {
 				//clears whichever input field is the other one from which you touched last
 				document.getElementById(which).value = null;
+				document.getElementsByClassName(which)[0].style.backgroundColor="unset";
+				document.getElementsByClassName(caller)[0].style.backgroundColor="lightblue";
 			}
 		</script>
 		<script type="text/javascript">
@@ -341,16 +345,16 @@
 	</head>
 	<body onload="checkapisupport()">
 		<h1>Make station</h1>
-		<p>This tool turns ALL large grids (except wheels on suspensions) into stations. May your deity of choice help you &hellip;</p>
-		<p style="color: red; font-weight: bold;">Warning 1: Apparently, there's a distinction between supported and unsupported stations. Presumably this has something to do with stations with ground contact. This tool currently produces station grids that are explicitly declared unsupported. (It also also adds this explicit declaration to existing stations that don't yet have it.) This shouldn't be a problem because ships wouldn't be intersecting with the ground in the first place. That said, proceed with caution.</p>
-		<p style="font-size: x-small;">And ideally contact me if this is causing reproducible issues or if you happen to have more insight into the <code>&lt;IsUnsupportedStation&gt;</code> tag.</p>
+		<p>This tool turns ALL large grids into stations. May your deity of choice help you &hellip;</p>
+		<p style="font-size:x-small;">(Wheels on suspensions excluded.)</p>
+		<p style="color: red; font-weight: bold;">Warning 1: Apparently, there's a distinction between supported and unsupported stations.</p>
+		<p style="font-size: x-small;">Presumably this has something to do with stations with ground contact. This tool currently produces station grids that are explicitly declared unsupported. (It also also adds this explicit declaration to existing stations that don't yet have it.) This shouldn't be a problem because ships wouldn't be intersecting with the ground in the first place. That said, proceed with caution. And ideally contact me if this is causing reproducible issues or if you happen to have more insight into the <code>&lt;IsUnsupportedStation&gt;</code> tag.</p>
 		<p style="color: red; font-weight: bold;">Warning 2: This <em>also</em> turns those large grids into stations that are attached to pistons or rotors by piston or rotor heads, so don't be surprised if your stationified vehicles become a little more rigid than you perhaps expected.</p>
-		<p style="font-size:x-small;">The reason for this ignorance is that you can always slap a control panel to those head blocks and turn the respective grids back into ships. You can't do that with suspended wheels.</p>
-		<p style="font-size:x-small ">If you do desperately need rotored or pistoned large grids to remain ships, let me know and I may code the necessary distinction.</p>
-		<!-- But if you for some reason and by some crazy magic connected a subgrid through a reversed piston or rotor, meaning the piston or rotor base is on the subgrid you want to keep as a ship, then I can't help you. I can write code that makes decisions; I can't write code that reads minds. -->
+		<p style="font-size:x-small;">Why this indifference? Because you can always slap a control panel to those head blocks and anything attached to them to turn the respective grids back into ships, but you can't add blocks to suspended wheels. If you do desperately need rotored or pistoned large grids to remain ships, let me know and I may code the necessary distinction.</p>
+		<!-- But if you for some reason and by some crazy magic connected a subgrid through a reversed piston or rotor, meaning the piston or rotor <strong>base</strong> is on the subgrid you want to keep as a ship, then I can't help you. I can write code that makes decisions; I can't write code that makes your browser read minds. -->
 		<p style="text-decoration-line: underline;">To begin, please provide your <em>sandbox_0_0_0_.sbs</em> (<strong>not</strong> your <em>sandbox.sbc</em> file!!):</p>
-		<p>Browse file system: <input id="sbs_file" type="file" name="sbs_file" accept="application/xml,.sbs" onchange="clearother('paste')"></p>
-		<p>Or paste file contents (slow for MB-sized files):<br><textarea id="paste" rows="10" cols="80" onkeyup="clearother('sbs_file')"></textarea></p>
+		<p class="input_sbs_file"> Browse file system: <input id="input_sbs_file" type="file" name="sbs_file" accept="application/xml,.sbs" oninput="clearother('input_sbs_paste','input_sbs_file')"></p>
+		<p class="input_sbs_paste"> Or paste file contents (slow for MB-sized files):<br><textarea id="input_sbs_paste" rows="10" cols="80" oninput="clearother('input_sbs_file','input_sbs_paste')"></textarea></p>
 		<p><button onmouseup="loadsbs()">Make stations</button></p>
 		<p>Your modified <em>sandbox_0_0_0_.sbs</em> file:</p>
 		<p><textarea id="output" rows="10" cols="80"></textarea></p>
