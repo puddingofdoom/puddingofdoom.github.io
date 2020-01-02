@@ -38,7 +38,7 @@
 
 				switch (which()) {
 					case "paste":
-						findlargegrids(document.getElementById("input_sbs_paste").value);
+						load_from_file(document.getElementById("input_sbs_paste").value);
 						break;
 					case "file":
 						load_from_file(event);
