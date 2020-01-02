@@ -10,8 +10,8 @@
 		<script type="text/javascript">
 
 			function which() {
-				let paste = document.getElementById("paste").value;
-				let selected_file = document.getElementById("sbs_file").files[0];
+				let paste = document.getElementById("input_sbs_paste").value;
+				let selected_file = document.getElementById("input_sbs_file").files[0];
 
 				let sbs_type="none";
 
@@ -38,7 +38,7 @@
 
 				switch (which()) {
 					case "paste":
-						findlargegrids(document.getElementById("paste").value);
+						findlargegrids(document.getElementById("input_sbs_paste").value);
 						break;
 					case "file":
 						load_from_file(event);
@@ -48,11 +48,11 @@
 					default:
 						console.log("You really broke it this time!");
 				}
-				return sbs_contents
+				return sbs_contents;
 			}
 
 			function load_from_file(event) {
-				var selected_file = document.getElementById("sbs_file").files[0];
+				var selected_file = document.getElementById("input_sbs_file").files[0];
 				let reader = new FileReader();
 
 				//reader.onprogress = updateProgress;
