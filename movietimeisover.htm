@@ -6,49 +6,109 @@
 			body { font-family:sans-serif;}
 		</style>
 		<script type="text/javascript">
-			function findprojectors(){
 
-				var paste = document.getElementById("paste").value;
+			function which() {
+				let paste = document.getElementById("input_sbs_paste").value;
+				let selected_file = document.getElementById("input_sbs_file").files[0];
+
+				let sbs_type="none";
 
 				if (paste.length > 0) {
-
-					var parser, xmlDoc
-					parser = new DOMParser();
-					xmlDoc = parser.parseFromString(paste, "application/xml");
-					
-					let temp = xmlDoc.getElementsByTagName("MyObjectBuilder_CubeBlock");
-					
-					if (typeof(temp) != undefined) {
-
-						cube_list = Array.from(temp);
-						// an array of all cubes
-
-						//debug:
-						console.log("found " + cube_list.length + " projectors");
-
-						for (var i = 0; i < cube_list.length; i++) {
-							
-							//debug:
-							console.log("---");
-							console.log("cube " + i + " is of type " + cube_list[i].getAttribute("xsi:type"));
-							
-							if (cube_list[i].getAttribute("xsi:type") == "MyObjectBuilder_Projector") {
-								// change only projectors
-								console.log("This is a projector!");
-
-								switchoff(cube_list[i]);
-							} else {
-								console.log("not a projector type, ignoring this cube");
-							}
-						}
-						
-						serializer = new XMLSerializer();
-						document.getElementById("output").value = serializer.serializeToString(xmlDoc);
-					} else {
-						console.log("could not find any grids");
-					}
+					sbs_type = "paste";
 				} else {
+					//debug:
 					console.log("paste field was empty");
+				}
+
+				if (selected_file) {
+					sbs_type = "file";
+				} else {
+					//debug:
+					console.log("no file selected");
+				}
+
+				return sbs_type;
+			}
+
+			function loadsbs() {
+				var sbs_contents;
+
+				switch (which()) {
+					case "paste":
+						load_from_file(document.getElementById("input_sbs_paste").value);
+						break;
+					case "file":
+						load_from_file(event);
+						break;
+					case "none":
+						console.log("no mode selected, doing nothing");
+					default:
+						console.log("You really broke it this time!");
+				}
+				return sbs_contents;
+			}
+
+			function load_from_file(event) {
+				var selected_file = document.getElementById("input_sbs_file").files[0];
+				let reader = new FileReader();
+
+				//reader.onprogress = updateProgress;
+				reader.onloadend = function (event, callback) {
+					//debug:
+					console.log(event.target.result.length);
+
+					findprojectors(event.target.result);
+
+				};
+				//reader.onerror = errorHandler;
+
+				reader.readAsText(selected_file);
+
+				// https://developer.mozilla.org/en-US/docs/Web/API/FileReader/FileReader
+				// https://www.javascripture.com/FileReader
+				// https://www.w3.org/TR/file-upload/#reading-a-file
+			}
+			// end function loadsbs()
+
+			function findprojectors(sbs_contents){
+
+				document.getElementById("output").value = "";
+				var parser, xmlDoc
+				parser = new DOMParser();
+				xmlDoc = parser.parseFromString(sbs_contents, "application/xml");
+				
+				let temp = xmlDoc.getElementsByTagName("MyObjectBuilder_CubeBlock");
+				
+				if (typeof(temp) != undefined) {
+
+					block_list = Array.from(temp);
+					// an array of all blocks
+
+					//debug:
+					console.log("found " + block_list.length + " blocks");
+
+					for (var i = 0; i < block_list.length; i++) {
+						
+						//debug:
+						//console.log("---");
+						//console.log("block " + i + " is of type " + block_list[i].getAttribute("xsi:type"));
+						
+						if (block_list[i].getAttribute("xsi:type") == "MyObjectBuilder_Projector") {
+							// change only projectors
+							console.log("---");
+							console.log("block " + i + " is of type " + block_list[i].getAttribute("xsi:type"));
+							console.log("This is a projector!");
+
+							switchoff(block_list[i]);
+						} else {
+							// console.log("not a projector type, ignoring this block");
+						}
+					}
+					
+					serializer = new XMLSerializer();
+					document.getElementById("output").value = serializer.serializeToString(xmlDoc);
+				} else {
+					console.log("could not find any grids");
 				}
 			}
 
@@ -58,7 +118,7 @@
 				//
 				// <Enabled>false</Enabled>
 
-				var enabled_tag = item.getElementsByTagName("Enabled")[0];
+				let enabled_tag = item.getElementsByTagName("Enabled")[0];
 
 				if (typeof(enabled_tag) != 'undefined' && enabled_tag != null) {
 					// exists, and may or may not have the content we want.
@@ -69,8 +129,8 @@
 					console.log("could not find an Enabled tag");
 				}
 
-				var enabled_tag = document.createElementNS(null,"Enabled");
-				var enabled_false = document.createTextNode("false");
+				enabled_tag = document.createElementNS(null,"Enabled");
+				let enabled_false = document.createTextNode("false");
 				enabled_tag.appendChild(enabled_false);
 				item.appendChild(enabled_tag);
 			}
@@ -79,14 +139,24 @@
 			//https://ourcodeworld.com/articles/read/189/how-to-create-a-file-and-generate-a-download-with-javascript-in-the-browser-without-a-server
 
 		</script>
+		<script type="text/javascript">
+			function clearother(which,caller) {
+				//clears whichever input field is the other one from which you touched last
+				document.getElementById(which).value = null;
+				document.getElementsByClassName(which)[0].style.backgroundColor="unset";
+				document.getElementsByClassName(caller)[0].style.backgroundColor="lightblue";
+			}
+		</script>
 		<link rel="icon" type="image/x-icon" href="favicon.ico">
 	</head>
 	<body>
 		<h1>Projectors off</h1>
 		<p>This tool turns off all projectors in a save file.</p>
-		<p>Paste your <em>sandbox_0_0_0_.sbs</em> (not your <strong><em>sandbox.sbc</em></strong> file!!) contents here:</p>
-		<p><textarea id="paste" rows="10" cols="80"></textarea></p>
-		<p><button type="button" onclick="findprojectors()">Projectors off</button></p>
+		<p style="text-decoration-line: underline;">To begin, please provide your <em>sandbox_0_0_0_.sbs</em> (<strong>not</strong> your <em>sandbox.sbc</em> file!!):</p>
+		<p class="input_sbs_file"> Browse file system: <input id="input_sbs_file" type="file" name="sbs_file" accept="application/xml,.sbs" oninput="clearother('input_sbs_paste','input_sbs_file')"></p>
+		<p class="input_sbs_paste"> Or paste file contents (slow for MB-sized files):<br><textarea id="input_sbs_paste" rows="10" cols="80" oninput="clearother('input_sbs_file','input_sbs_paste')"></textarea></p>
+		<p><button onmouseup="loadsbs()">Projectors off</button></p>
+		<!--<p><button type="button" onclick="findprojectors()">Projectors off</button></p>-->
 		<p>Your modified <em>sandbox_0_0_0_.sbs</em> file:</p>
 		<p><textarea id="output" rows="10" cols="80"></textarea></p>
 		<p>Remember to delete the caching file <em>sandbox_0_0_0_.sbsB5</em> before launching or it will take precedence over the SBS file!</p>
